@@ -16,7 +16,12 @@ class Traps(Range):
     range_end = 70
     default = 50
 
+class EnableAutoHints(Toggle):
+    """Enable revealing the items in adjacent locations when completing an achievement"""
+    display_name = "Enable Auto Hints"
+
 @dataclass
 class CCOptions(PerGameCommonOptions):
     advancement_goal: Goal
     traps_percentage: Traps
+    enable_hints: EnableAutoHints

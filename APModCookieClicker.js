@@ -12,7 +12,8 @@
 // ==/UserScript==
 
 const {Client, itemsHandlingFlags} = await import(
-  "https://unpkg.com/archipelago.js@2.0.4/dist/archipelago.min.js"
+  // Switched to a fork because main repo has a bug on hint ordering
+  "https://unpkg.com/@airbreather/archipelago.js@2.0.5-airbreather"
   );
 //'use strict';
 
@@ -105,6 +106,10 @@ consoleInput.addEventListener("keypress", function (event) {
 
 document.body.prepend(connectionContainer);
 
+const style = document.createElement("style");
+style.textContent = ".hinted { opacity: 1 !important }";
+document.head.append(style);
+
 function typeToText(element) {
   let id = -1;
   id = Number(element.text);
@@ -187,9 +192,9 @@ function connectAP() {
   window.client.socket.disconnect();
 
   // Set up event listeners
-  window.client.socket.on("connected", (packet) => {
+  window.client.socket.on("connected", async (packet) => {
     console.log("Connected to server: ", packet);
-    appendFunctions();
+    await appendFunctions();
     save();
   });
 
@@ -282,6 +287,13 @@ hostname.value = "archipelago.gg";
 const gameName = "Cookie Clicker";
 let goalAchievementCount = 1000; // Default value prevent accidental goaling
 let receivedItems = [];
+let locationsByDisplayOrder = [];
+// Fields should be the same as Options.py
+const gameOptions = {
+  advancement_goal: null,
+  traps_percentage: null,
+  enable_hints: null,
+};
 
 /* On Site Loaded */
 // Disable CookieClicker
@@ -345,10 +357,13 @@ function toast(message) {
 }
 
 const OFFSET = {
-  BUILDINGS: 10000000,
-  UPGRADES: 20000000,
-  FILLERS: 50000000,
-  TRAPS: 60000000
+  ITEMS: {
+    BUILDINGS: 10000000,
+    UPGRADES: 20000000,
+    FILLERS: 50000000,
+    TRAPS: 60000000
+  },
+  ACHIEVEMENTS: 42069001
 }
 
 function receiveItem(itemId, firstTime) {
@@ -363,96 +378,96 @@ function receiveItem(itemId, firstTime) {
 
   const range = Math.floor(itemId / 10000000) * 10000000
 
-  if (range === OFFSET.FILLERS && firstTime) {
+  if (range === OFFSET.ITEMS.FILLERS && firstTime) {
     switch (itemId) {
-      case OFFSET.FILLERS + 0 :
+      case OFFSET.ITEMS.FILLERS + 0 :
         Game.cookies *= 2;
         console.log("*2 Cookies");
         break;
-      case OFFSET.FILLERS + 1 :
+      case OFFSET.ITEMS.FILLERS + 1 :
         Game.cookies *= 999;
         console.log("*999 Cookies");
         break;
-      case OFFSET.FILLERS + 2 :
+      case OFFSET.ITEMS.FILLERS + 2 :
         Game.cookies *= 9999;
         console.log("*9999 Cookies");
         break;
-      case OFFSET.FILLERS + 3 :
+      case OFFSET.ITEMS.FILLERS + 3 :
         Game.cookies *= 9999999;
         console.log("*9999999 Cookies");
         break;
-      case OFFSET.FILLERS + 4 :
+      case OFFSET.ITEMS.FILLERS + 4 :
         Game.cookies *= 0.5;
         console.log("*0.5 Cookies");
         break;
     }
   }
-  if (range === OFFSET.BUILDINGS) {
+  if (range === OFFSET.ITEMS.BUILDINGS) {
     switch (itemId) {
-      case OFFSET.BUILDINGS + 0 : // Unlock Cursor
+      case OFFSET.ITEMS.BUILDINGS + 0 : // Unlock Cursor
         document.getElementById("product0").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 1 : // Unlock Grandma
+      case OFFSET.ITEMS.BUILDINGS + 1 : // Unlock Grandma
         document.getElementById("product1").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 2 : // Unlock Farm
+      case OFFSET.ITEMS.BUILDINGS + 2 : // Unlock Farm
         document.getElementById("product2").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 3 : // Unlock Mine
+      case OFFSET.ITEMS.BUILDINGS + 3 : // Unlock Mine
         document.getElementById("product3").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 4 : // Unlock Factory
+      case OFFSET.ITEMS.BUILDINGS + 4 : // Unlock Factory
         document.getElementById("product4").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 5 : // Unlock Bank
+      case OFFSET.ITEMS.BUILDINGS + 5 : // Unlock Bank
         document.getElementById("product5").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 6 : // Unlock Temple
+      case OFFSET.ITEMS.BUILDINGS + 6 : // Unlock Temple
         document.getElementById("product6").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 7 : // Unlock Wizard Tower
+      case OFFSET.ITEMS.BUILDINGS + 7 : // Unlock Wizard Tower
         document.getElementById("product7").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 8 : // Unlock Shipment
+      case OFFSET.ITEMS.BUILDINGS + 8 : // Unlock Shipment
         document.getElementById("product8").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 9 : // Unlock Alchemy Lab
+      case OFFSET.ITEMS.BUILDINGS + 9 : // Unlock Alchemy Lab
         document.getElementById("product9").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 10 : // Unlock Portal
+      case OFFSET.ITEMS.BUILDINGS + 10 : // Unlock Portal
         document.getElementById("product10").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 11 : // Unlock Time Machine
+      case OFFSET.ITEMS.BUILDINGS + 11 : // Unlock Time Machine
         document.getElementById("product11").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 12 : // Unlock Antimatter Condenser
+      case OFFSET.ITEMS.BUILDINGS + 12 : // Unlock Antimatter Condenser
         document.getElementById("product12").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 13 : // Unlock Prism
+      case OFFSET.ITEMS.BUILDINGS + 13 : // Unlock Prism
         document.getElementById("product13").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 14 : // Unlock Chancemaker
+      case OFFSET.ITEMS.BUILDINGS + 14 : // Unlock Chancemaker
         document.getElementById("product14").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 15 : // Unlock Fractal Engine
+      case OFFSET.ITEMS.BUILDINGS + 15 : // Unlock Fractal Engine
         document.getElementById("product15").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 16 : // Unlock Javascript Console
+      case OFFSET.ITEMS.BUILDINGS + 16 : // Unlock Javascript Console
         document.getElementById("product16").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 17 : // Unlock Idleverse
+      case OFFSET.ITEMS.BUILDINGS + 17 : // Unlock Idleverse
         document.getElementById("product17").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 18 : // Unlock Cortex Baker
+      case OFFSET.ITEMS.BUILDINGS + 18 : // Unlock Cortex Baker
         document.getElementById("product18").style.display = "";
         break;
-      case OFFSET.BUILDINGS + 19 : // Unlock You
+      case OFFSET.ITEMS.BUILDINGS + 19 : // Unlock You
         document.getElementById("product19").style.display = "";
         break;
     }
   }
-  if (range === OFFSET.UPGRADES) {
-    const upgradeId = itemId - OFFSET.UPGRADES - 1;
+  if (range === OFFSET.ITEMS.UPGRADES) {
+    const upgradeId = itemId - OFFSET.ITEMS.UPGRADES - 1;
     Game.UpgradesById[upgradeId].basePrice = -1;
     let success = Game.UpgradesById[upgradeId].buy();
     if (success !== 1) {
@@ -460,60 +475,60 @@ function receiveItem(itemId, firstTime) {
       Game.UpgradesById[upgradeId].bought = 1;
     }
   }
-  if (range === OFFSET.TRAPS && firstTime) {
+  if (range === OFFSET.ITEMS.TRAPS && firstTime) {
     switch (itemId) {
-      case OFFSET.TRAPS + 0 :
+      case OFFSET.ITEMS.TRAPS + 0 :
         building.amount = Math.max(building.amount - 1, 0);
         Game.Notify("Archipelago", "-1 " + building.name);
         console.log("-1 Building");
         break;
-      case OFFSET.TRAPS + 1 :
+      case OFFSET.ITEMS.TRAPS + 1 :
         building.amount = Math.max(building.amount - 10, 0);
         Game.Notify("Archipelago", "-10 " + building.name);
         console.log("-10 Building");
         break;
-      case OFFSET.TRAPS + 2 :
+      case OFFSET.ITEMS.TRAPS + 2 :
         building.amount = Math.max(building.amount - 100, 0);
         Game.Notify("Archipelago", "-100 " + building.name);
         console.log("-100 Building");
         break;
-      case OFFSET.TRAPS + 3 :
+      case OFFSET.ITEMS.TRAPS + 3 :
         Game.cookies *= 0.9;
         console.log("-10% Cookies");
         break;
-      case OFFSET.TRAPS + 4 :
+      case OFFSET.ITEMS.TRAPS + 4 :
         Game.cookies *= 0.8;
         console.log("-20% Cookies");
         break;
-      case OFFSET.TRAPS + 5 :
+      case OFFSET.ITEMS.TRAPS + 5 :
         Game.cookies *= 0.7;
         console.log("-30% Cookies");
         break;
-      case OFFSET.TRAPS + 6 :
+      case OFFSET.ITEMS.TRAPS + 6 :
         Game.cookies *= 0.6;
         console.log("-40% Cookies");
         break;
-      case OFFSET.TRAPS + 7 :
+      case OFFSET.ITEMS.TRAPS + 7 :
         Game.cookies *= 0.5;
         console.log("-50% Cookies");
         break;
-      case OFFSET.TRAPS + 8 :
+      case OFFSET.ITEMS.TRAPS + 8 :
         Game.cookies *= 0.4;
         console.log("-60% Cookies");
         break;
-      case OFFSET.TRAPS + 9 :
+      case OFFSET.ITEMS.TRAPS + 9 :
         Game.cookies *= 0.3;
         console.log("-70% Cookies");
         break;
-      case OFFSET.TRAPS + 10 :
+      case OFFSET.ITEMS.TRAPS + 10 :
         Game.cookies *= 0.2;
         console.log("-80% Cookies");
         break;
-      case OFFSET.TRAPS + 11 :
+      case OFFSET.ITEMS.TRAPS + 11 :
         Game.cookies *= 0.1;
         console.log("-90% Cookies");
         break;
-      case OFFSET.TRAPS + 12 :
+      case OFFSET.ITEMS.TRAPS + 12 :
         Game.cookies = 0;
         console.log("-100% Cookies");
         break;
@@ -526,8 +541,38 @@ function loadAchieveNum() {
   return Object.values(Game.Achievements).filter(achv => achv.won).length;
 }
 
+function debounceAndMergeInputs(func, delay) {
+    let timeout;
+    let allArgs = []
+    return function (...args) {
+        allArgs.push(...args);
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(this, allArgs);
+            allArgs = [];
+        }, delay);
+    };
+}
+
+/*
+ When buying buildings by 100, many consecutive achievements are unlocked at once
+ To prevent hinting locations that are unlocked right after, we apply a debounce and batch the request
+*/
+const scoutLocations = debounceAndMergeInputs((...locations) => {
+  console.log("Scouting locations ", locations);
+  window.client.scout(locations.map(me => me.id + OFFSET.ACHIEVEMENTS), 2)
+}, 500)
+// Reveal item locked behind adjacent achievements when completing one
+function hintAdjacentLocations(it) {
+  const aaa = locationsByDisplayOrder.findIndex(loc => loc.name === it.name)
+  const prev = locationsByDisplayOrder[aaa - 1]
+  const next = locationsByDisplayOrder[aaa + 1]
+  if (!!prev && !prev.won) { scoutLocations(prev) }
+  if (!!next && !next.won) { scoutLocations(next) }
+}
+
 // Append functions which need to be set or overwritten after Connection during Runtime
-function appendFunctions() {
+async function appendFunctions() {
   //enable CookieClicker
   document.getElementById("wrapper").style.visibility = "visible";
 
@@ -557,10 +602,56 @@ function appendFunctions() {
   document.getElementById("product18").style.display = "none";
   document.getElementById("product19").style.display = "none";
 
-  // Set advancement_goal as goalAchievementCount
-  window.client.players.self.fetchSlotData().then((res) => {
-    goalAchievementCount = res.advancement_goal;
+  // Read all game options
+  await window.client.players.self.fetchSlotData().then((slotData) => {
+    // Set advancement_goal as goalAchievementCount
+    goalAchievementCount = slotData.advancement_goal;
+    Object.keys(gameOptions).forEach(optionName => gameOptions[optionName] = slotData[optionName]);
+    console.log("Game options:", gameOptions);
   });
+
+  // Build a list of achievements ordered by their order field (ie. their display order)
+  for (let i in Game.Achievements)//sort the achievements
+  {
+    locationsByDisplayOrder.push(Game.Achievements[i]);
+  }
+  let sortMap = function (a, b) {
+    if (a.order > b.order) return 1;
+    else if (a.order < b.order) return -1;
+    else return 0;
+  }
+  locationsByDisplayOrder.sort(sortMap);
+
+  if (gameOptions.enable_hints) {
+    // Overwrite menu drawing so hinted locations are emphasized
+    const CCUpdateMenu = Game.UpdateMenu;
+    Game.UpdateMenu = (me, context) => {
+      CCUpdateMenu(me, context);
+      const menu = document.getElementById("menu");
+      let menuItems = new Map(Object.values(menu.querySelectorAll(".achievement:not(.enabled)")).map(i => [i.dataset.id, i]))
+      const hints = window.client.items.hints.filter(o => !o.found && o.item.locationGame === gameName)
+      hints.forEach(h => {
+        menuItems.get(String(h.item.locationId - OFFSET.ACHIEVEMENTS))?.classList.add("hinted")
+      })
+    }
+
+    // Display hinted item name in the tooltip
+    const mysterious = "???"
+    const CCcrateTooltip = Game.crateTooltip;
+    Game.crateTooltip = (me, context) => {
+      let str = CCcrateTooltip(me, context);
+      if (me.type === "achievement") {
+        let h = window.client.items.hints.find(o => !o.found && o.item.locationId === me.id + OFFSET.ACHIEVEMENTS);
+        if (!!h) {
+          str = str
+            .replace(mysterious, `${h.item.locationName}`)
+            .replace(mysterious, `Will send item <b>${h.item.name}</b> to <b>${h.item.receiver.name}</b><br>---<br><b>Condition: </b>${me.desc}`)
+        }
+      }
+      return str
+    }
+  }
+
 
   // Overwrite for win function CookieClicker
   Game.Win = function (what) {
@@ -587,8 +678,8 @@ function appendFunctions() {
           if (App && it.vanilla) App.gotAchiev(it.id);
 
           // Send AchievementID to AP
-          const checkIdOffset = 42069001
-          sendCheckIdToAp(it.id + checkIdOffset);
+          sendCheckIdToAp(it.id + OFFSET.ACHIEVEMENTS);
+          if (gameOptions.enable_hints) hintAdjacentLocations(it);
 
           const gameWon = window.client.items.received.some(i => i.id === 42000000)
           if (!gameWon && loadAchieveNum() >= goalAchievementCount) {
@@ -714,6 +805,7 @@ function appendFunctions() {
     if (Game.Has("Diabetica Daemonicus")) Game.lumpMatureAge -= hour;
     if (Game.Has("Ichor syrup")) Game.lumpMatureAge -= 1000 * 60 * 7;
     if (Game.Has("Sugar aging process"))
+      // In vanilla, 600 grandmas ~= 4% timer reduction
       Game.lumpRipeAge -= 6000 * Math.min(600, Game.Objects["Grandma"].amount); // Capped at 600 grandmas
     if (Game.hasGod && Game.BuildingsOwned % 10 == 0) {
       let godLvl = Game.hasGod("order");
@@ -725,6 +817,9 @@ function appendFunctions() {
     Game.lumpMatureAge /= 1 + Game.auraMult("Dragon's Curve") * 0.05;
     Game.lumpRipeAge /= 1 + Game.auraMult("Dragon's Curve") * 0.05;
     Game.lumpOverripeAge = Game.lumpRipeAge + hour;
+    // Note : Applying every single buffs is equivalent to ~20% timer reduction
+
+    // Debug upgrade
     if (Game.Has("Glucose-charged air")) {
       Game.lumpMatureAge /= 2000;
       Game.lumpRipeAge /= 2000;

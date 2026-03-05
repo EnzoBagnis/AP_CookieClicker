@@ -1,5 +1,6 @@
 import random
 import json
+from dataclasses import asdict
 from BaseClasses import Tutorial, Region, MultiWorld, Item, CollectionState, ItemClassification
 from Utils import visualize_regions
 from worlds.AutoWorld import World
@@ -84,9 +85,7 @@ class CookieClicker(World):
         return {
             "player_name": self.multiworld.get_player_name(self.player),
             "player_id": self.player,
-            "advancement_goal": self.options.advancement_goal.value,
-            "traps_percentage": self.options.traps_percentage.value,
             "race": self.multiworld.is_race
-        }
+        } | {k: v.value for k, v in asdict(self.options).items()}
 
     set_rules = set_rules
