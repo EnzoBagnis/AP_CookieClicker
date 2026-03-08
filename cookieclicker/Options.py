@@ -16,6 +16,26 @@ class Traps(Range):
     range_end = 70
     default = 50
 
+class ProductionMultiplier(Range):
+    """Production multiplier, as a power of ten
+        0 (x1): Vanilla
+        1/2 (x10/x100): Slightly faster early game
+        3 (x1000): Suitable for sync (completion in several hours)
+        4 (x10.000): Suitable for sync (completion in about 1 hour)
+        5 (x100.000): You can stop now.
+    """
+    display_name = "Production Multiplier (power of ten)"
+    range_start = 0
+    range_end = 5
+    default = 0
+
+class LumpMultiplier(Range):
+    """Lump multiplier"""
+    display_name = "Lump Multiplier"
+    range_start = 1
+    range_end = 10
+    default = 1
+
 class EnableAutoHints(Toggle):
     """Enable revealing the items in adjacent locations when completing an achievement"""
     display_name = "Enable Auto Hints"
@@ -25,3 +45,5 @@ class CCOptions(PerGameCommonOptions):
     advancement_goal: Goal
     traps_percentage: Traps
     enable_hints: EnableAutoHints
+    production_multiplier: ProductionMultiplier
+    lump_multiplier: LumpMultiplier

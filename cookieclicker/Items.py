@@ -19,6 +19,7 @@ class OFFSET():
 
 # TODO: missing flavored cookies? https://cookieclicker.fandom.com/wiki/Flavored_Cookies
 # Upgrades START ID 10000000
+# FIXME all ids are offsetted by 1, it's pretty error prone
 upgrades = [
     ItemData(OFFSET.UPGRADES + 1, "Reinforced index finger", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 2, "Carpal tunnel prevention cream", ItemClassification.useful),

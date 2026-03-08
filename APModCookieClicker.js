@@ -29,12 +29,13 @@ console.log("AP CookieClicker loaded");
 //so you just need to change Game Specific stuff
 
 //ToastLibary, for Announcements
-
+/* Not used in CC
 const cssToast = document.createElement("link");
 cssToast.href = "https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css";
 cssToast.type = "text/css";
 cssToast.rel = "stylesheet";
 document.head.append(cssToast);
+*/
 
 const scriptToast = document.createElement("script");
 scriptToast.src = "https://cdn.jsdelivr.net/npm/toastify-js";
@@ -62,16 +63,16 @@ connect.onclick = function () {
 };
 const text = document.createElement("span");
 
-connectionContainer.style.display = "flex";
+// TODO make this into a form so we can use tab to complete fields
 connectionContainer.style.margin = "0";
-connectionContainer.style.padding = "0";
+connectionContainer.style.padding = "5px";
 connectionContainer.style.position = "absolute";
-connectionContainer.style.top = "8.5rem";
-connectionContainer.style.right = "0";
+connectionContainer.style.bottom = "40px";
 connectionContainer.style.left = "0";
 connectionContainer.style.zIndex = "99999";
 connectionContainer.style.justifyContent = "center";
 connectionContainer.style.gap = "1rem";
+connectionContainer.style.width = "30%";
 connectionContainer.append(
   text,
   hostname,
@@ -139,15 +140,9 @@ function packetToText(packet) {
   }
   let msg = "";
   packet.forEach((element) => {
-    msg += typeToText(element) + " ";
+    msg += typeToText(element);
   });
   return msg;
-}
-
-function getPlayerId(map, searchValue) {
-  for (let [key, value] of map.entries()) {
-    if (value.name === searchValue) return key;
-  }
 }
 
 function sendCheckIdToAp(id) {
@@ -155,10 +150,6 @@ function sendCheckIdToAp(id) {
   // Essential to avoid discrepancies between AP server state and CC local save
   // We could do a full check after each game load to sync both, with forced Game.Win/Game.RemoveAchiev
   Game.WriteSave();
-}
-
-function releaseAll() {
-  window.client.check(window.client.room.allLocations);
 }
 
 function connectAP() {
@@ -207,24 +198,27 @@ function connectAP() {
 
     // When items.length > 1 its an reconnect
     if (packet.items.length > 1) {
-      const serverItems = [];
+      const difference = [];
 
       // Execute Items with firstTime = false > only Unlocks, no Traps or Items
       packet.items.forEach((item) => {
-        receiveItem(item.item, false);
-        serverItems.push(item.item);
+        if (receivedItems.includes(item.item)) {
+          receiveItem(item.item, false);
+        } else {
+          receiveItem(item.item, true);
+          toast(null, {
+            receiving: window.client.players.self.slot,
+            item: item,
+            type: "ItemSend"
+          })
+          difference.push(item.item);
+        }
       });
 
       // Compare serverItems with local saved (and executed Items)
-      const difference = serverItems.filter((x) => !receivedItems.includes(x));
-      console.log("serverItems");
-      console.log(serverItems);
-
-      console.log("receivedItems");
-      console.log(receivedItems);
-
-      console.log("difference");
-      console.log(difference);
+      console.log("serverItems", packet.items.map(x => x.item));
+      console.log("receivedItems", receivedItems);
+      console.log("difference", difference);
 
       difference.forEach((id) => {
         receiveItem(id, true);
@@ -247,7 +241,7 @@ function connectAP() {
       return;
     }
     console.log("MSG: " + msg);
-    toast(msg);
+    toast(msg, packet);
   });
 
   // Connect to the Archipelago server
@@ -290,10 +284,14 @@ let receivedItems = [];
 let locationsByDisplayOrder = [];
 // Fields should be the same as Options.py
 const gameOptions = {
-  advancement_goal: null,
-  traps_percentage: null,
-  enable_hints: null,
+  advancement_goal: 1000,
+  traps_percentage: 0,
+  enable_hints: false,
+  production_multiplier: 0,
+  lump_multiplier: 0,
 };
+
+const buildingIconColumn = [0,1,2,3,4,15,16,17,5,6,7,8,13,14,19,20,32,33,34,35];
 
 /* On Site Loaded */
 // Disable CookieClicker
@@ -346,14 +344,55 @@ function randomProperty(obj) {
 }
 
 // For this game we use the Games Chat, not the default Toast
-function toast(message) {
+// TODO add a toggle somewhere to filter notifications
+function toast(message, {receiving: receiving, item: item, type: type} = {}) {
+
+  if (receiving === window.client.players.self.slot) {
+    if (type === "ItemSend") {
+      const sender = window.client.players.findPlayer(item.player);
+      const senderName = sender.slot === window.client.players.self.slot ? "You" : sender.alias;
+      const locationName = window.client.package.lookupLocationName(sender.game, item.location);
+
+      let id;
+      let name;
+      let icon;
+      if (OFFSET.ITEMS.isBuilding(item.item)) {
+        id = item.item - OFFSET.ITEMS.BUILDINGS;
+        name = Game.ObjectsById[id];
+        icon = [buildingIconColumn[id], 27]
+      } else if (OFFSET.ITEMS.isUpgrade(item.item)) {
+        const upgrade = Game.UpgradesById[item.item - OFFSET.ITEMS.UPGRADES - 1];
+        id = upgrade.id;
+        name = upgrade.name;
+        icon = upgrade.icon;
+      } else {
+        message && Game.Notify("Archipelago", message);
+        return;
+      }
+
+      Game.Notify("Item received", `${senderName} just found your <b>${name}</b> at ${locationName} !</div>`, icon);
+      OFFSET.ITEMS.isUpgrade(item.item) && Game.NotifyTooltip("function(){return Game.crateTooltip(Game.UpgradesById[" + id + "]);}");
+      return;
+    }
+  }
+  if (type === "Hint") {
+      const icon = [0,8]; // Question marks
+      const receiver = window.client.players.findPlayer(receiving);
+      const sender = window.client.players.findPlayer(item.player);
+      const itemName = window.client.package.lookupItemName(sender.game, item.item);
+      const locationName = window.client.package.lookupLocationName(sender.game, item.location);
+
+      Game.Notify("Hint", `${receiver.alias}'s <b>${itemName}</b> is located at <b>${locationName}</b> in ${sender.alias}'s world</div>`, icon);
+      return;
+    }
   Game.Notify("Archipelago", message);
+
   /*
-    Toastify({
-        text: message,
-        duration: 5000
+  Toastify({
+      text: message,
+      duration: 5000
     }).showToast();
-    */
+  */
 }
 
 const OFFSET = {
@@ -361,7 +400,11 @@ const OFFSET = {
     BUILDINGS: 10000000,
     UPGRADES: 20000000,
     FILLERS: 50000000,
-    TRAPS: 60000000
+    TRAPS: 60000000,
+    isBuilding: id => Math.floor(id / 10000000) * 10000000 === OFFSET.ITEMS.BUILDINGS,
+    isUpgrade: id => Math.floor(id / 10000000) * 10000000 === OFFSET.ITEMS.UPGRADES,
+    isFiller: id => Math.floor(id / 10000000) * 10000000 === OFFSET.ITEMS.FILLERS,
+    isTrap: id => Math.floor(id / 10000000) * 10000000 === OFFSET.ITEMS.TRAPS,
   },
   ACHIEVEMENTS: 42069001
 }
@@ -376,9 +419,7 @@ function receiveItem(itemId, firstTime) {
 
   save();
 
-  const range = Math.floor(itemId / 10000000) * 10000000
-
-  if (range === OFFSET.ITEMS.FILLERS && firstTime) {
+  if (OFFSET.ITEMS.isFiller(itemId) && firstTime) {
     switch (itemId) {
       case OFFSET.ITEMS.FILLERS + 0 :
         Game.cookies *= 2;
@@ -402,7 +443,7 @@ function receiveItem(itemId, firstTime) {
         break;
     }
   }
-  if (range === OFFSET.ITEMS.BUILDINGS) {
+  if (OFFSET.ITEMS.isBuilding(itemId)) {
     switch (itemId) {
       case OFFSET.ITEMS.BUILDINGS + 0 : // Unlock Cursor
         document.getElementById("product0").style.display = "";
@@ -466,16 +507,15 @@ function receiveItem(itemId, firstTime) {
         break;
     }
   }
-  if (range === OFFSET.ITEMS.UPGRADES) {
-    const upgradeId = itemId - OFFSET.ITEMS.UPGRADES - 1;
-    Game.UpgradesById[upgradeId].basePrice = -1;
-    let success = Game.UpgradesById[upgradeId].buy();
-    if (success !== 1) {
+  if (OFFSET.ITEMS.isUpgrade(itemId)) {
+    let upgrade = Game.UpgradesById[itemId - OFFSET.ITEMS.UPGRADES - 1];
+    upgrade.basePrice = -1;
+    if (upgrade.buy() !== 1) {
       // If there is no buy function, set it to bought manually
-      Game.UpgradesById[upgradeId].bought = 1;
+      upgrade.bought = 1;
     }
   }
-  if (range === OFFSET.ITEMS.TRAPS && firstTime) {
+  if (OFFSET.ITEMS.isTrap(itemId) && firstTime) {
     switch (itemId) {
       case OFFSET.ITEMS.TRAPS + 0 :
         building.amount = Math.max(building.amount - 1, 0);
@@ -652,6 +692,35 @@ async function appendFunctions() {
     }
   }
 
+  if (gameOptions.production_multiplier && gameOptions.production_multiplier > 0) {
+    new Game.buffType('AP cookies', function (time, pow) {
+      return {
+        name: '[AP] Blessing from another world',
+        desc: `Cookie production x${pow} forever!`,
+        icon: [23, 16],
+        time: 1000000000 * Game.fps,
+        add: false,
+        multCpS: pow,
+        aura: 1
+      };
+    });
+    Game.gainBuff('AP cookies', null, 10**gameOptions.production_multiplier);
+  }
+  if (gameOptions.lump_multiplier && gameOptions.lump_multiplier > 1) {
+    new Game.buffType('AP lumps', function (time, pow) {
+      return {
+        name: '[AP] Sugar from another world',
+        desc: `All sugar lump harvests will yield x${pow} lumps forever!`,
+        icon: [33, 0],
+        time: 1000000000 * Game.fps,
+        add: false,
+        aura: 1
+      };
+    });
+    Game.gainBuff('AP lumps', null, gameOptions.lump_multiplier);
+    const CCgainLumps = Game.gainLumps;
+    Game.gainLumps = total => CCgainLumps(total * gameOptions.lump_multiplier);
+  }
 
   // Overwrite for win function CookieClicker
   Game.Win = function (what) {
@@ -798,25 +867,25 @@ async function appendFunctions() {
 
   // TODO Use Config?
   Game.computeLumpTimes = function () {
-    let hour = 1000 * 6;
-    Game.lumpMatureAge = hour * 20;
-    Game.lumpRipeAge = hour * 23;
-    if (Game.Has("Stevia Caelestis")) Game.lumpRipeAge -= hour;
-    if (Game.Has("Diabetica Daemonicus")) Game.lumpMatureAge -= hour;
-    if (Game.Has("Ichor syrup")) Game.lumpMatureAge -= 1000 * 60 * 7;
+    let minute = 1000 * 60;
+    Game.lumpMatureAge = minute * 9;
+    Game.lumpRipeAge = minute * 10;
+    if (Game.Has("Stevia Caelestis")) Game.lumpRipeAge -= minute;
+    if (Game.Has("Diabetica Daemonicus")) Game.lumpMatureAge -= minute;
+    if (Game.Has("Ichor syrup")) Game.lumpMatureAge -= minute/60 * 7;
     if (Game.Has("Sugar aging process"))
       // In vanilla, 600 grandmas ~= 4% timer reduction
-      Game.lumpRipeAge -= 6000 * Math.min(600, Game.Objects["Grandma"].amount); // Capped at 600 grandmas
+      Game.lumpRipeAge -= minute/600 * Math.min(600, Game.Objects["Grandma"].amount); // Capped at 600 grandmas
     if (Game.hasGod && Game.BuildingsOwned % 10 == 0) {
       let godLvl = Game.hasGod("order");
-      if (godLvl == 1) Game.lumpRipeAge -= hour;
-      else if (godLvl == 2) Game.lumpRipeAge -= (hour / 3) * 2;
-      else if (godLvl == 3) Game.lumpRipeAge -= hour / 3;
+      if (godLvl == 1) Game.lumpRipeAge -= minute;
+      else if (godLvl == 2) Game.lumpRipeAge -= (minute / 3) * 2;
+      else if (godLvl == 3) Game.lumpRipeAge -= minute / 3;
     }
     //if (Game.hasAura('Dragon\'s Curve')) {Game.lumpMatureAge/=1.05;Game.lumpRipeAge/=1.05;}
     Game.lumpMatureAge /= 1 + Game.auraMult("Dragon's Curve") * 0.05;
     Game.lumpRipeAge /= 1 + Game.auraMult("Dragon's Curve") * 0.05;
-    Game.lumpOverripeAge = Game.lumpRipeAge + hour;
+    Game.lumpOverripeAge = Game.lumpRipeAge + minute;
     // Note : Applying every single buffs is equivalent to ~20% timer reduction
 
     // Debug upgrade
