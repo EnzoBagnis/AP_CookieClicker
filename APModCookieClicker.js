@@ -20,12 +20,13 @@ const {Client, itemsHandlingFlags} = await import(
 // TODO
 // Error Handling on Connection
 // Logic for Achievements
-// Configs for Shimmer and Sugar Lump Times
+// Configs for Shimmer
+// Put all the agnostic stuff into a big object and export it as a lib
 
 console.log("AP CookieClicker loaded");
 
 //this started as Cookieclicker, but should work as a template for all browser games
-//therefore code is splitted into Archipelago stuff, and Game specific Stuff
+//therefore code is split into Archipelago stuff, and Game specific Stuff
 //so you just need to change Game Specific stuff
 
 //ToastLibary, for Announcements
@@ -50,51 +51,72 @@ document.head.append(scriptToast);
 */
 
 // Input fields
-const connectionContainer = document.createElement("div");
-const hostname = document.createElement("input");
-const port = document.createElement("input");
-const name = document.createElement("input");
-const password = document.createElement("input");
-const connect = document.createElement("button");
-const consoleInput = document.createElement("input");
+const apMenuContainer = document.createElement("div");
+apMenuContainer.id = "apMenu";
+
+apMenuContainer.innerHTML = `
+   <div id="apMenuArrow"> < </div>
+   <form id="apConnectionForm">
+    <span>Connect to your AP server </span>
+    <fieldset id="apConnectionFields">
+      <input name="hostname" placeholder="Address"/>
+      <input name="port" placeholder="Port (38281 for local games)"/>
+      <input name="slot" placeholder="Slot Name"/>
+      <input name="password" placeholder="Password" type="password"/>
+      <button type="submit">Connect</button>
+      <br/>
+      <span id="apFormError" class="APhide"></span>
+    </fieldset>
+  </form>
+  <form id="apHintForm">
+    <fieldset id="apHintFields" disabled>
+      <input name="item" placeholder="Item name" list="itemList">
+      <datalist id="itemList">/* populated after connection */</datalist>
+      <input type="submit" value="Hint this!">
+    </fieldset>
+  </form>
+`;
+
+
+const formStyle = `
+  fieldset { border: none;}
+  #apMenu {
+    margin: 0;
+    padding: 15px;
+    position: absolute;
+    top: 30%;
+    left: 0;
+    z-index: 99999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 20%;
+    background-color: black;
+    box-sizing: border-box;
+
+    &.isClosed {
+      left: -20%;
+    }
+  }
+  #apFormError {
+    color: red;
+    font-weight: bold;
+  }
+  #apMenuArrow {
+    position: absolute;
+    right: -20px;
+    background-color: black;
+    padding: 10px;
+    border-radius: 10px;
+  }
+`;
+
+const consoleInput = document.createElement("input")
+consoleInput.id = "apCommandInput"
+consoleInput.placeholder = "!command"
 consoleInput.disabled = true;
-connect.onclick = function () {
-  connectAP();
-};
-const text = document.createElement("span");
-
-// TODO make this into a form so we can use tab to complete fields
-connectionContainer.style.margin = "0";
-connectionContainer.style.padding = "5px";
-connectionContainer.style.position = "absolute";
-connectionContainer.style.bottom = "40px";
-connectionContainer.style.left = "0";
-connectionContainer.style.zIndex = "99999";
-connectionContainer.style.justifyContent = "center";
-connectionContainer.style.gap = "1rem";
-connectionContainer.style.width = "30%";
-connectionContainer.append(
-  text,
-  hostname,
-  port,
-  name,
-  password,
-  connect,
-  consoleInput,
-);
-
-text.innerText = "AP Conn: ";
-hostname.placeholder = "Address";
-hostname.style.width = "120px";
-port.placeholder = "Port";
-port.style.width = "64px";
-name.placeholder = "Slot Name";
-name.style.width = "120px";
-password.placeholder = "Password";
-password.type = "password";
-password.style.width = "100px";
-connect.innerText = "Connect";
-consoleInput.placeholder = "!hint";
 
 // Console
 consoleInput.addEventListener("keypress", function (event) {
@@ -104,16 +126,19 @@ consoleInput.addEventListener("keypress", function (event) {
     consoleInput.value = "";
   }
 });
+apMenuContainer.append(consoleInput);
+document.body.prepend(apMenuContainer);
 
-document.body.prepend(connectionContainer);
-
+// Injecting AP client style
 const style = document.createElement("style");
-style.textContent = ".hinted { opacity: 1 !important }";
+style.textContent = `
+  .hinted { opacity: 1 !important }
+  .APhide { display: none !important }
+` + formStyle;
 document.head.append(style);
 
 function typeToText(element) {
-  let id = -1;
-  id = Number(element.text);
+  const id = Number(element.text);
 
   if (element.type === "player_id" && !isNaN(id)) {
     return window.client.players.findPlayer(parseInt(element.text, 10))?.alias;
@@ -152,14 +177,29 @@ function sendCheckIdToAp(id) {
   Game.WriteSave();
 }
 
-function connectAP() {
+function connectAP(e) {
+  e.preventDefault();
+  console.debug("CONNECTION ATTEMPT", e);
   window.client = new Client();
-  connect.disabled = true;
-  hostname.disabled = true;
-  port.disabled = true;
-  name.disabled = true;
-  password.disabled = true;
-  consoleInput.disabled = false;
+
+  const fields = document.getElementById("apConnectionFields");
+  const apFormError = document.getElementById("apFormError");
+  fields.disabled = true;
+  apFormError.classList.add("APhide");
+
+  const handleError = error => {
+      console.error("Error during connection attempt: ", error.toString())
+      document.getElementById("apConnectionFields").disabled = true;
+      apFormError.textContent = error.toString();
+      apFormError.classList.remove("APhide");
+      fields.disabled = false;
+  };
+
+  const { hostname, port, slot, password } = e.target;
+  if (!hostname.value || !port.value || !slot.value) {
+    handleError("Address, Port and Slot Name should not be empty!");
+    return;
+  }
 
   if (parseInt(port.value) !== parseInt(localStorage.getItem("port"))) {
     if (
@@ -246,20 +286,15 @@ function connectAP() {
 
   // Connect to the Archipelago server
   window.client
-    .login(url, name.value, gameName, connectionInfo)
+    .login(url, slot.value, gameName, connectionInfo)
     .then(() => {
       console.log("Connected to the server");
-    })
-    .catch((error) => {
-      console.error("Failed to connect:", error.toString());
-      toast(error.toString());
-      connect.disabled = true;
-      hostname.disabled = true;
-      port.disabled = true;
-      name.disabled = true;
-      password.disabled = true;
+      document.getElementById("apHintFields").disabled = false;
       consoleInput.disabled = false;
-    });
+      const itemList = document.getElementById("itemList");
+      Object.keys(window.client.package.findPackage(gameName).itemTable).forEach(item => itemList.innerHTML +=`<option value="${item}">`);
+    })
+    .catch(handleError);
 
   // Disconnect from the server when unloading window
   window.addEventListener("beforeunload", () => {
@@ -267,8 +302,23 @@ function connectAP() {
   });
 }
 
+const hintItem = e => {
+  e.preventDefault();
+  window.client.messages.say("!hint " + e.target.item.value)
+    .then(() => e.target.item.value = "");
+}
+
+const toggleMenu = () => {
+  apMenuContainer.classList.toggle("isClosed");
+  document.getElementById("apMenuArrow").textContent = apMenuContainer.classList.contains("isClosed") ? ">" : "<";
+}
+
+document.getElementById("apConnectionForm").addEventListener("submit", connectAP);
+document.getElementById("apHintForm").addEventListener("submit", hintItem);
+document.getElementById("apMenuArrow").addEventListener("click", toggleMenu);
+
 //forDev
-hostname.value = "archipelago.gg";
+// hostname.value = "archipelago.gg";
 //port.value = "51981";
 //name.value = "Alex_CC";
 
@@ -292,6 +342,9 @@ const gameOptions = {
 };
 
 const buildingIconColumn = [0,1,2,3,4,15,16,17,5,6,7,8,13,14,19,20,32,33,34,35];
+
+// FIXME: form fields should be stored in a APGame object or something but too much refacto for one commit. quick compat fix and will do at later time
+const { hostname, port, slot: name, password } = document.getElementById("apConnectionForm");
 
 /* On Site Loaded */
 // Disable CookieClicker
@@ -347,6 +400,10 @@ function randomProperty(obj) {
 // TODO add a toggle somewhere to filter notifications
 function toast(message, {receiving: receiving, item: item, type: type} = {}) {
 
+  if (type === "error") {
+    Game.Notify("Error", message, [1, 7]); // "!" icon
+    return;
+  }
   if (receiving === window.client.players.self.slot) {
     if (type === "ItemSend") {
       const sender = window.client.players.findPlayer(item.player);
@@ -376,15 +433,15 @@ function toast(message, {receiving: receiving, item: item, type: type} = {}) {
     }
   }
   if (type === "Hint") {
-      const icon = [0,8]; // Question marks
-      const receiver = window.client.players.findPlayer(receiving);
-      const sender = window.client.players.findPlayer(item.player);
-      const itemName = window.client.package.lookupItemName(sender.game, item.item);
-      const locationName = window.client.package.lookupLocationName(sender.game, item.location);
+    const icon = [0, 8]; // Question marks
+    const receiver = window.client.players.findPlayer(receiving);
+    const sender = window.client.players.findPlayer(item.player);
+    const itemName = window.client.package.lookupItemName(sender.game, item.item);
+    const locationName = window.client.package.lookupLocationName(sender.game, item.location);
 
-      Game.Notify("Hint", `${receiver.alias}'s <b>${itemName}</b> is located at <b>${locationName}</b> in ${sender.alias}'s world</div>`, icon);
-      return;
-    }
+    Game.Notify("Hint", `${receiver.alias}'s <b>${itemName}</b> is located at <b>${locationName}</b> in ${sender.alias}'s world</div>`, icon);
+    return;
+  }
   Game.Notify("Archipelago", message);
 
   /*
@@ -582,16 +639,16 @@ function loadAchieveNum() {
 }
 
 function debounceAndMergeInputs(func, delay) {
-    let timeout;
-    let allArgs = []
-    return function (...args) {
-        allArgs.push(...args);
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            func.apply(this, allArgs);
-            allArgs = [];
-        }, delay);
-    };
+  let timeout;
+  let allArgs = []
+  return function (...args) {
+    allArgs.push(...args);
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+      func.apply(this, allArgs);
+      allArgs = [];
+    }, delay);
+  };
 }
 
 /*
@@ -602,6 +659,7 @@ const scoutLocations = debounceAndMergeInputs((...locations) => {
   console.log("Scouting locations ", locations);
   window.client.scout(locations.map(me => me.id + OFFSET.ACHIEVEMENTS), 2)
 }, 500)
+
 // Reveal item locked behind adjacent achievements when completing one
 function hintAdjacentLocations(it) {
   const aaa = locationsByDisplayOrder.findIndex(loc => loc.name === it.name)
