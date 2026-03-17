@@ -658,7 +658,7 @@ function debounceAndMergeInputs(func, delay) {
 const scoutLocations = debounceAndMergeInputs((...locations) => {
   console.log("Scouting locations ", locations);
   window.client.scout(locations.map(me => me.id + OFFSET.ACHIEVEMENTS), 2)
-}, 500)
+}, 3000); // 500 deemed not enough by testers
 
 // Reveal item locked behind adjacent achievements when completing one
 function hintAdjacentLocations(it) {
@@ -720,35 +720,35 @@ async function appendFunctions() {
   }
   locationsByDisplayOrder.sort(sortMap);
 
-  if (gameOptions.enable_hints) {
-    // Overwrite menu drawing so hinted locations are emphasized
-    const CCUpdateMenu = Game.UpdateMenu;
-    Game.UpdateMenu = (me, context) => {
-      CCUpdateMenu(me, context);
-      const menu = document.getElementById("menu");
-      let menuItems = new Map(Object.values(menu.querySelectorAll(".achievement:not(.enabled)")).map(i => [i.dataset.id, i]))
-      const hints = window.client.items.hints.filter(o => !o.found && o.item.locationGame === gameName)
-      hints.forEach(h => {
-        menuItems.get(String(h.item.locationId - OFFSET.ACHIEVEMENTS))?.classList.add("hinted")
-      })
-    }
-
-    // Display hinted item name in the tooltip
-    const mysterious = "???"
-    const CCcrateTooltip = Game.crateTooltip;
-    Game.crateTooltip = (me, context) => {
-      let str = CCcrateTooltip(me, context);
-      if (me.type === "achievement") {
-        let h = window.client.items.hints.find(o => !o.found && o.item.locationId === me.id + OFFSET.ACHIEVEMENTS);
-        if (!!h) {
-          str = str
-            .replace(mysterious, `${h.item.locationName}`)
-            .replace(mysterious, `Will send item <b>${h.item.name}</b> to <b>${h.item.receiver.name}</b><br>---<br><b>Condition: </b>${me.desc}`)
-        }
-      }
-      return str
-    }
+  // TODO add a client config panel and make hint display toggleable
+  // Overwrite menu drawing so hinted locations are emphasized
+  const CCUpdateMenu = Game.UpdateMenu;
+  Game.UpdateMenu = (me, context) => {
+    CCUpdateMenu(me, context);
+    const menu = document.getElementById("menu");
+    let menuItems = new Map(Object.values(menu.querySelectorAll(".achievement:not(.enabled)")).map(i => [i.dataset.id, i]))
+    const hints = window.client.items.hints.filter(o => !o.found && o.item.locationGame === gameName)
+    hints.forEach(h => {
+      menuItems.get(String(h.item.locationId - OFFSET.ACHIEVEMENTS))?.classList.add("hinted")
+    })
   }
+
+  // Display hinted item name in the tooltip
+  const mysterious = "???"
+  const CCcrateTooltip = Game.crateTooltip;
+  Game.crateTooltip = (me, context) => {
+    let str = CCcrateTooltip(me, context);
+    if (me.type === "achievement") {
+      let h = window.client.items.hints.find(o => !o.found && o.item.locationId === me.id + OFFSET.ACHIEVEMENTS);
+      if (!!h) {
+        str = str
+          .replace(mysterious, `${h.item.locationName}`)
+          .replace(mysterious, `Will send item <b>${h.item.name}</b> to <b>${h.item.receiver.name}</b><br>---<br><b>Condition: </b>${me.desc}`)
+      }
+    }
+    return str
+  }
+
 
   if (gameOptions.production_multiplier && gameOptions.production_multiplier > 0) {
     new Game.buffType('AP cookies', function (time, pow) {
