@@ -95,6 +95,7 @@ const formStyle = `
     width: 20%;
     background-color: black;
     box-sizing: border-box;
+    transition: 0.5s;
 
     &.isClosed {
       left: -20%;
@@ -749,8 +750,7 @@ async function appendFunctions() {
     return str
   }
 
-
-  if (gameOptions.production_multiplier && gameOptions.production_multiplier > 0) {
+  function applyProductionMultiplier() {
     new Game.buffType('AP cookies', function (time, pow) {
       return {
         name: '[AP] Blessing from another world',
@@ -762,9 +762,10 @@ async function appendFunctions() {
         aura: 1
       };
     });
-    Game.gainBuff('AP cookies', null, 10**gameOptions.production_multiplier);
+    Game.gainBuff('AP cookies', null, 10 ** gameOptions.production_multiplier);
   }
-  if (gameOptions.lump_multiplier && gameOptions.lump_multiplier > 1) {
+
+  function applyLumpMultiplier() {
     new Game.buffType('AP lumps', function (time, pow) {
       return {
         name: '[AP] Sugar from another world',
@@ -779,6 +780,9 @@ async function appendFunctions() {
     const CCgainLumps = Game.gainLumps;
     Game.gainLumps = total => CCgainLumps(total * gameOptions.lump_multiplier);
   }
+
+  if (gameOptions.production_multiplier && gameOptions.production_multiplier > 0) applyProductionMultiplier();
+  if (gameOptions.lump_multiplier && gameOptions.lump_multiplier > 1) applyLumpMultiplier();
 
   // Overwrite for win function CookieClicker
   Game.Win = function (what) {
@@ -876,54 +880,20 @@ async function appendFunctions() {
     }
   };
 
+  // Extend
+  const CCReincarnate = Game.Reincarnate;
   Game.Reincarnate = function (bypass) {
-    if (!bypass)
-      Game.Prompt(
-        "<id Reincarnate><h3>" +
-        loc("Reincarnate") +
-        '</h3><div class="block">' +
-        loc("Are you ready to return to the mortal world?") +
-        "</div>",
-        [[loc("Yes"), "Game.ClosePrompt();Game.Reincarnate(1);"], loc("No")],
-      );
-    else {
-      Game.ascendUpgradesl.innerHTML = "";
-      Game.ascensionMode = Game.nextAscensionMode;
-      Game.nextAscensionMode = 0;
-      Game.Reset();
-      if (Game.HasAchiev("Rebirth")) {
-        Game.Notify("Reincarnated", loc("Hello, cookies!"), [10, 0], 4);
-      }
-      if (Game.resets >= 1000) Game.Win("Endless cycle");
-      if (Game.resets >= 100) Game.Win("Reincarnation");
-      if (Game.resets >= 10) Game.Win("Resurrection");
-      if (Game.resets >= 1) Game.Win("Rebirth");
-
-      let prestigeUpgradesOwned = 0;
-      for (let i in Game.Upgrades) {
-        if (Game.Upgrades[i].bought && Game.Upgrades[i].pool == "prestige")
-          prestigeUpgradesOwned++;
-      }
-      if (prestigeUpgradesOwned >= 100) Game.Win("All the stars in heaven");
-
-      Game.removeClass("ascending");
-      Game.OnAscend = 0;
-
-      // Trigger the reincarnate animation
-      Game.ReincarnateTimer = 1;
-      Game.addClass("reincarnating");
-      Game.BigCookieSize = 0;
-
-      Game.runModHook("reincarnate");
-
+      CCReincarnate();
+      // Reapply custom buffs cleared during ascension
+      if (gameOptions.production_multiplier && gameOptions.production_multiplier > 0) applyProductionMultiplier();
+      if (gameOptions.lump_multiplier && gameOptions.lump_multiplier > 1) applyLumpMultiplier();
       // Reapply all items
       receivedItems.forEach((id) => {
         receiveItem(id, false);
       });
     }
-  };
 
-  // TODO Use Config?
+  // Boost lump times by default. Max ripe time is 10mn instead of 24h
   Game.computeLumpTimes = function () {
     let minute = 1000 * 60;
     Game.lumpMatureAge = minute * 9;
