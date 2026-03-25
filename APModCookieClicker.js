@@ -1017,4 +1017,15 @@ async function appendFunctions() {
       Game.lumpOverripeAge /= 2000;
     }
   };
+
+  const CCUnlock = Game.Unlock;
+  Game.Unlock = (what) => {
+    if (typeof what==='string') {
+      // If item is in the AP pool, then prevent unlocking it (so it won't display in shop)
+      if (window.client.package.findPackage(gameName).reverseItemTable[Game.Upgrades[what].id + OFFSET.ITEMS.UPGRADES]) {
+        return;
+      }
+    }
+    CCUnlock(what)
+  }
 }
