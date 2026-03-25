@@ -883,7 +883,7 @@ async function appendFunctions() {
   // Extend
   const CCReincarnate = Game.Reincarnate;
   Game.Reincarnate = function (bypass) {
-      CCReincarnate();
+      CCReincarnate(bypass);
       // Reapply custom buffs cleared during ascension
       if (gameOptions.production_multiplier && gameOptions.production_multiplier > 0) applyProductionMultiplier();
       if (gameOptions.lump_multiplier && gameOptions.lump_multiplier > 1) applyLumpMultiplier();
