@@ -339,42 +339,11 @@ upgrades = [
     ItemData(OFFSET.UPGRADES + 684, "Alternate grandmas", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 730, "Brainy grandmas", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 826, "Clone grandmas", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 370, "Future almanacs", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 371, "Rain prayer", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 372, "Seismic magic", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 373, "Asteroid mining", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 374, "Quantum electronics", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 375, "Temporal overclocking", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 376, "Contracts from beyond", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 377, "Printing presses", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 378, "Paganism", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 379, "God particle", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 380, "Arcane knowledge", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 381, "Magical botany", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 382, "Fossil fuels", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 383, "Shipyards", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 384, "Primordial ores", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 385, "Gold fund", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 386, "Infernal crops", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 387, "Abysmal glimmer", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 388, "Relativistic parsec-skipping", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 389, "Primeval glow", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 390, "Extra physics funding", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 391, "Chemical proficiency", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 392, "Light magic", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 393, "Mystical energies", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 425, "Gemmed talismans", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 444, "Charm quarks", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 534, "Recursive mirrors", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 535, "Mice clicking mice", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 606, "Script grannies", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 607, "Tombola computing", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 697, "Perforated mille-feuille cosmos", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 698, "Infraverses and superverses", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 762, "Thoughts & prayers", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 763, "Fertile minds", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 860, "Accelerated development", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 861, "Peer review", ItemClassification.useful),
+
+    # Synergy upgrades (from Farm to You, both tier successive)
+
+    # End of synergy upgrades
+
     ItemData(OFFSET.UPGRADES + 32, "Kitten helpers", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 33, "Kitten workers", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 55, "Kitten engineers", ItemClassification.useful),
@@ -467,6 +436,19 @@ upgrades = [
     ItemData(OFFSET.UPGRADES + 228, "Chocolate egg", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 229, "Century egg", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 230, "egg", ItemClassification.useful),
+
+    # Building fortunes (in order)
+
+    # End of building fortunes
+
+    ItemData(OFFSET.UPGRADES + 639, "Fortune #100", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 640, "Fortune #101", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 641, "Fortune #102", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 642, "Fortune #103", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 643, "Fortune #104", ItemClassification.useful)
+]
+
+building_fortunes = [
     ItemData(OFFSET.UPGRADES + 622, "Fortune #001", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 623, "Fortune #002", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 624, "Fortune #003", ItemClassification.useful),
@@ -487,12 +469,50 @@ upgrades = [
     ItemData(OFFSET.UPGRADES + 699, "Fortune #018", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 764, "Fortune #019", ItemClassification.useful),
     ItemData(OFFSET.UPGRADES + 862, "Fortune #020", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 639, "Fortune #100", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 640, "Fortune #101", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 641, "Fortune #102", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 642, "Fortune #103", ItemClassification.useful),
-    ItemData(OFFSET.UPGRADES + 643, "Fortune #104", ItemClassification.useful)
 ]
+
+synergies = [
+    # Tier I
+    ItemData(OFFSET.UPGRADES + 370, "Future almanacs", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 372, "Seismic magic", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 374, "Quantum electronics", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 376, "Contracts from beyond", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 378, "Paganism", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 380, "Arcane knowledge", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 382, "Fossil fuels", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 384, "Primordial ores", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 386, "Infernal crops", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 388, "Relativistic parsec-skipping", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 390, "Extra physics funding", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 392, "Light magic", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 425, "Gemmed talismans", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 534, "Recursive mirrors", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 606, "Script grannies", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 697, "Perforated mille-feuille cosmos", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 762, "Thoughts & prayers", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 860, "Accelerated development", ItemClassification.useful),
+
+    # Tier II
+    ItemData(OFFSET.UPGRADES + 371, "Rain prayer", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 373, "Asteroid mining", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 375, "Temporal overclocking", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 377, "Printing presses", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 379, "God particle", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 381, "Magical botany", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 383, "Shipyards", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 385, "Gold fund", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 387, "Abysmal glimmer", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 389, "Primeval glow", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 391, "Chemical proficiency", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 393, "Mystical energies", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 444, "Charm quarks", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 535, "Mice clicking mice", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 607, "Tombola computing", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 698, "Infraverses and superverses", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 763, "Fertile minds", ItemClassification.useful),
+    ItemData(OFFSET.UPGRADES + 861, "Peer review", ItemClassification.useful),
+]
+
 
 # Fillers/Cookie Multiplier Start ID 50000000
 # TODO Should 0.5x be removed ? Redundant with traps
@@ -555,14 +575,41 @@ structures = [
     ItemData(OFFSET.BUILDINGS + 19, "Unlock You", ItemClassification.progression)
 ]
 
+progressive_structures = [
+    # Cursor and grandmas don't have synergy upgrades
+    ItemData(OFFSET.BUILDINGS + 2, "Progressive Farm", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 3, "Progressive Mine", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 4, "Progressive Factory", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 5, "Progressive Bank", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 6, "Progressive Temple", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 7, "Progressive Wizard Tower", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 8, "Progressive Shipment", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 9, "Progressive Alchemy Lab", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 10, "Progressive Portal", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 11, "Progressive Time Machine", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 12, "Progressive Antimatter Condenser", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 13, "Progressive Prism", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 14, "Progressive Chancemaker", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 15, "Progressive Fractal Engine", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 16, "Progressive Javascript Console", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 17, "Progressive Idleverse", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 18, "Progressive Cortex Baker", ItemClassification.progression),
+    ItemData(OFFSET.BUILDINGS + 19, "Progressive You", ItemClassification.progression)
+]
+
 item_list = []
 item_list += upgrades
+item_list += synergies
 item_list += cookie_multiplier
 item_list += traps
 item_list += structures
 
-item_table = {item.item_name: item for item in item_list}
 items_by_id = {item.code: item for item in item_list}
 
 # Prevent duplicate items
-assert len(item_list) == len(item_table) == len(items_by_id), "Multiple items with same id/name detected! Please open an issue on Github"
+assert len(item_list) == len(items_by_id), "Multiple items with same id detected! Please open an issue on Github"
+
+# Progressive items are by definition duplicates so we add them later
+item_list += progressive_structures
+items_by_id = {item.code: item for item in item_list}
+item_table = {item.item_name: item for item in item_list}

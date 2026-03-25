@@ -40,6 +40,13 @@ class EnableAutoHints(Toggle):
     """Enable revealing the items in adjacent locations when completing an achievement"""
     display_name = "Enable Auto Hints"
 
+class SynergyAsProgressiveBuildings(Toggle):
+    """When enabled, this option makes Synergy upgrades behave like a Unlock Building item.
+        This mean you get 3x Unlock Building instead of 1x, and subsequent unlocks will
+        turn into a synergy upgrade instead.
+    """
+    display_name = "Synergy as Progressive Buildings"
+
 @dataclass
 class CCOptions(PerGameCommonOptions):
     advancement_goal: Goal
@@ -47,3 +54,4 @@ class CCOptions(PerGameCommonOptions):
     enable_hints: EnableAutoHints
     production_multiplier: ProductionMultiplier
     lump_multiplier: LumpMultiplier
+    enable_progressive_buildings: SynergyAsProgressiveBuildings

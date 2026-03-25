@@ -241,29 +241,37 @@ function connectAP(e) {
     if (packet.items.length > 1) {
       const difference = [];
 
-      // Execute Items with firstTime = false > only Unlocks, no Traps or Items
-      packet.items.forEach((item) => {
-        if (receivedItems.includes(item.item)) {
-          receiveItem(item.item, false);
-        } else {
-          receiveItem(item.item, true);
+      const receiveNewItem = networkItem => {
+          receiveItem(networkItem.item, true);
           toast(null, {
             receiving: window.client.players.self.slot,
-            item: item,
+            item: networkItem,
             type: "ItemSend"
           })
-          difference.push(item.item);
+          difference.push(networkItem.item);
+      }
+
+      const receivedItemsById = Object.groupBy(receivedItems || [], x => x);
+      const networkItemsById = Object.groupBy(packet.items, x => x.item);
+      for (let id in networkItemsById) {
+        if (!receivedItemsById[id]) {
+          // New item
+          networkItemsById[id].forEach(i => receiveNewItem(i, true));
+        } else if (receivedItemsById[id].length < networkItemsById[id].length) {
+          // Further occurrences of fillers, progressive... any item that can appear multiple times.
+          // FIXME regression: fillers obtained while away are not skipped anymore
+          const missing = networkItemsById[id].length - receivedItemsById[id].length;
+          for (let i = 0; i<receivedItemsById[id].length; i++) receiveItem(id, false);
+          for (let i = 0; i<missing; i++) receiveNewItem(networkItemsById[id][0]);
+        } else {
+          networkItemsById[id].forEach(i => receiveItem(id, false));
         }
-      });
+      }
 
       // Compare serverItems with local saved (and executed Items)
       console.log("serverItems", packet.items.map(x => x.item));
       console.log("receivedItems", receivedItems);
       console.log("difference", difference);
-
-      difference.forEach((id) => {
-        receiveItem(id, true);
-      });
     } else {
       // Just one Item means its new > always use
       receiveItem(packet.items[0].item, true);
@@ -329,6 +337,14 @@ document.getElementById("apMenuArrow").addEventListener("click", toggleMenu);
 /*                                   */
 /*                                   */
 
+const CCStyleOverrides = document.createElement("style");
+CCStyleOverrides.textContent = `
+  .product { display: block !important }
+  .product.toggledOff { opacity: 0.6 } /* Ugly magic number from CC code */ 
+  .product[data-aphide="1"] { display: none !important; }
+`;
+document.head.append(CCStyleOverrides);
+
 const gameName = "Cookie Clicker";
 let goalAchievementCount = 1000; // Default value prevent accidental goaling
 let receivedItems = [];
@@ -340,9 +356,8 @@ const gameOptions = {
   enable_hints: false,
   production_multiplier: 0,
   lump_multiplier: 0,
+  enable_progressive_buildings: false,
 };
-
-const buildingIconColumn = [0,1,2,3,4,15,16,17,5,6,7,8,13,14,19,20,32,33,34,35];
 
 // FIXME: form fields should be stored in a APGame object or something but too much refacto for one commit. quick compat fix and will do at later time
 const { hostname, port, slot: name, password } = document.getElementById("apConnectionForm");
@@ -416,8 +431,8 @@ function toast(message, {receiving: receiving, item: item, type: type} = {}) {
       let icon;
       if (OFFSET.ITEMS.isBuilding(item.item)) {
         id = item.item - OFFSET.ITEMS.BUILDINGS;
-        name = Game.ObjectsById[id];
-        icon = [buildingIconColumn[id], 27]
+        name = Game.ObjectsById[id].name;
+        icon = [Game.ObjectsById[id].iconColumn, 27];
       } else if (OFFSET.ITEMS.isUpgrade(item.item)) {
         const upgrade = Game.UpgradesById[item.item - OFFSET.ITEMS.UPGRADES - 1];
         id = upgrade.id;
@@ -469,6 +484,16 @@ const OFFSET = {
 
 function receiveItem(itemId, firstTime) {
   let building = randomProperty(Game.Objects); // FIXME should exclude locked buildings
+  itemId = parseInt(itemId);
+
+  function receiveUpgrade(upgrade) {
+    let u = upgrade || Game.UpgradesById[itemId - OFFSET.ITEMS.UPGRADES - 1];
+    u.basePrice = -1;
+    if (u.buy() !== 1) {
+      // If there is no buy function, set it to bought manually
+      u.bought = 1;
+    }
+  }
 
   if (firstTime) {
     receivedItems.push(itemId);
@@ -502,76 +527,145 @@ function receiveItem(itemId, firstTime) {
     }
   }
   if (OFFSET.ITEMS.isBuilding(itemId)) {
+    const receivedCount = Object.groupBy(receivedItems, x => x)[itemId]?.length || 0;
     switch (itemId) {
       case OFFSET.ITEMS.BUILDINGS + 0 : // Unlock Cursor
-        document.getElementById("product0").style.display = "";
+        document.getElementById("product0").dataset.aphide = "";
         break;
       case OFFSET.ITEMS.BUILDINGS + 1 : // Unlock Grandma
-        document.getElementById("product1").style.display = "";
+        document.getElementById("product1").dataset.aphide = "";
         break;
       case OFFSET.ITEMS.BUILDINGS + 2 : // Unlock Farm
-        document.getElementById("product2").style.display = "";
+        [
+          () => document.getElementById("product2").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Future almanacs"]),
+          () => receiveUpgrade(Game.Upgrades["Rain prayer"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 3 : // Unlock Mine
-        document.getElementById("product3").style.display = "";
+        [
+          () => document.getElementById("product3").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Seismic magic"]),
+          () => receiveUpgrade(Game.Upgrades["Asteroid mining"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 4 : // Unlock Factory
-        document.getElementById("product4").style.display = "";
+        [
+          () => document.getElementById("product4").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Quantum electronics"]),
+          () => receiveUpgrade(Game.Upgrades["Temporal overclocking"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 5 : // Unlock Bank
-        document.getElementById("product5").style.display = "";
+        [
+          () => document.getElementById("product5").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Contracts from beyond"]),
+          () => receiveUpgrade(Game.Upgrades["Printing presses"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 6 : // Unlock Temple
-        document.getElementById("product6").style.display = "";
+        [
+          () => document.getElementById("product6").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Paganism"]),
+          () => receiveUpgrade("God particle")
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 7 : // Unlock Wizard Tower
-        document.getElementById("product7").style.display = "";
+        [
+          () => document.getElementById("product7").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Arcane knowledge"]),
+          () => receiveUpgrade(Game.Upgrades["Magical botany"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 8 : // Unlock Shipment
-        document.getElementById("product8").style.display = "";
+        [
+          () => document.getElementById("product8").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Fossil fuels"]),
+          () => receiveUpgrade(Game.Upgrades["Shipyards"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 9 : // Unlock Alchemy Lab
-        document.getElementById("product9").style.display = "";
+        [
+          () => document.getElementById("product9").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Primordial ores"]),
+          () => receiveUpgrade(Game.Upgrades["Gold fund"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 10 : // Unlock Portal
-        document.getElementById("product10").style.display = "";
+        [
+          () => document.getElementById("product10").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Infernal crops"]),
+          () => receiveUpgrade(Game.Upgrades["Abysmal glimmer"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 11 : // Unlock Time Machine
-        document.getElementById("product11").style.display = "";
+        [
+          () => document.getElementById("product11").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Relativistic parsec-skipping"]),
+          () => receiveUpgrade(Game.Upgrades["Primeval glow"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 12 : // Unlock Antimatter Condenser
-        document.getElementById("product12").style.display = "";
+        [
+          () => document.getElementById("product12").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Extra physics funding"]),
+          () => receiveUpgrade(Game.Upgrades["Chemical proficiency"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 13 : // Unlock Prism
-        document.getElementById("product13").style.display = "";
+        [
+          () => document.getElementById("product13").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Light magic"]),
+          () => receiveUpgrade(Game.Upgrades["Mystical energies"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 14 : // Unlock Chancemaker
-        document.getElementById("product14").style.display = "";
+        [
+          () => document.getElementById("product14").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Gemmed talismans"]),
+          () => receiveUpgrade(Game.Upgrades["Charm quarks"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 15 : // Unlock Fractal Engine
-        document.getElementById("product15").style.display = "";
+        [
+          () => document.getElementById("product15").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Recursive mirrors"]),
+          () => receiveUpgrade(Game.Upgrades["Mice clicking mice"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 16 : // Unlock Javascript Console
-        document.getElementById("product16").style.display = "";
+        [
+          () => document.getElementById("product16").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Script grannies"]),
+          () => receiveUpgrade(Game.Upgrades["Tombola computing"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 17 : // Unlock Idleverse
-        document.getElementById("product17").style.display = "";
+        [
+          () => document.getElementById("product17").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Perforated mille-feuille cosmos"]),
+          () => receiveUpgrade(Game.Upgrades["Infraverses and superverses"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 18 : // Unlock Cortex Baker
-        document.getElementById("product18").style.display = "";
+        [
+          () => document.getElementById("product18").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Thoughts & prayers"]),
+          () => receiveUpgrade(Game.Upgrades["Fertile minds"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
       case OFFSET.ITEMS.BUILDINGS + 19 : // Unlock You
-        document.getElementById("product19").style.display = "";
+        [
+          () => document.getElementById("product19").dataset.aphide = "",
+          () => receiveUpgrade(Game.Upgrades["Accelerated development"]),
+          () => receiveUpgrade(Game.Upgrades["Peer review"])
+        ].slice(0,receivedCount).forEach(callback => callback());
         break;
     }
   }
+
   if (OFFSET.ITEMS.isUpgrade(itemId)) {
-    let upgrade = Game.UpgradesById[itemId - OFFSET.ITEMS.UPGRADES - 1];
-    upgrade.basePrice = -1;
-    if (upgrade.buy() !== 1) {
-      // If there is no buy function, set it to bought manually
-      upgrade.bought = 1;
-    }
+    receiveUpgrade();
   }
   if (OFFSET.ITEMS.isTrap(itemId) && firstTime) {
     switch (itemId) {
@@ -680,26 +774,26 @@ async function appendFunctions() {
   //document.getElementById("upgrades").style.pointerEvents = "none";
 
   //lock all Stores
-  document.getElementById("product0").style.display = "none";
-  //document.getElementById("product1").style.display = "none"; Grandmas are enabled from start
-  document.getElementById("product2").style.display = "none";
-  document.getElementById("product3").style.display = "none";
-  document.getElementById("product4").style.display = "none";
-  document.getElementById("product5").style.display = "none";
-  document.getElementById("product6").style.display = "none";
-  document.getElementById("product7").style.display = "none";
-  document.getElementById("product8").style.display = "none";
-  document.getElementById("product9").style.display = "none";
-  document.getElementById("product10").style.display = "none";
-  document.getElementById("product11").style.display = "none";
-  document.getElementById("product12").style.display = "none";
-  document.getElementById("product13").style.display = "none";
-  document.getElementById("product14").style.display = "none";
-  document.getElementById("product15").style.display = "none";
-  document.getElementById("product16").style.display = "none";
-  document.getElementById("product17").style.display = "none";
-  document.getElementById("product18").style.display = "none";
-  document.getElementById("product19").style.display = "none";
+  document.getElementById("product0").dataset["aphide"] = "1";
+  // document.getElementById("product1").dataset["aphide"] = "1"; Grandmas are enabled from start
+  document.getElementById("product2").dataset["aphide"] = "1";
+  document.getElementById("product3").dataset["aphide"] = "1";
+  document.getElementById("product4").dataset["aphide"] = "1";
+  document.getElementById("product5").dataset["aphide"] = "1";
+  document.getElementById("product6").dataset["aphide"] = "1";
+  document.getElementById("product7").dataset["aphide"] = "1";
+  document.getElementById("product8").dataset["aphide"] = "1";
+  document.getElementById("product9").dataset["aphide"] = "1";
+  document.getElementById("product10").dataset["aphide"] = "1";
+  document.getElementById("product11").dataset["aphide"] = "1";
+  document.getElementById("product12").dataset["aphide"] = "1";
+  document.getElementById("product13").dataset["aphide"] = "1";
+  document.getElementById("product14").dataset["aphide"] = "1";
+  document.getElementById("product15").dataset["aphide"] = "1";
+  document.getElementById("product16").dataset["aphide"] = "1";
+  document.getElementById("product17").dataset["aphide"] = "1";
+  document.getElementById("product18").dataset["aphide"] = "1";
+  document.getElementById("product19").dataset["aphide"] = "1";
 
   // Read all game options
   await window.client.players.self.fetchSlotData().then((slotData) => {
