@@ -1,12 +1,13 @@
 import random
+import json
 from dataclasses import asdict
 from BaseClasses import Tutorial, Region, MultiWorld, Item, CollectionState, ItemClassification
 from Utils import visualize_regions
 from worlds.AutoWorld import World
 from worlds.generic.Rules import add_rule
 from Options import PerGameCommonOptions
-from .Items import CCItem, traps, item_table, upgrades, structures, synergies, cookie_multiplier, \
-    cookie_multiplier_weights, progressive_structures
+from .Items import CCItem, traps, item_table, upgrades, structures, cookie_multiplier, cookie_multiplier_weights
+from typing import Dict, Any
 from .Locations import CCLocation, location_table
 from .Options import CCOptions
 from .Rules import set_rules
@@ -49,25 +50,8 @@ class CookieClicker(World):
         for upgrade in upgrades:
             self.multiworld.itempool.append(self.create_item(upgrade.item_name))
 
-        if self.options.enable_progressive_buildings.value:
-            # Manually add Unlock Cursor since it doesn't have synergy upgrades
-            self.multiworld.itempool.append(self.create_item(structures[0].item_name))
-
-            # We skipp all the others and use progressive structures instead
-            for structure_unlock in progressive_structures:
-                progressive_item = self.create_item(structure_unlock.item_name)
-
-                # ugly 3x lines because only for synergy for now
-                self.multiworld.itempool.append(progressive_item)
-                self.multiworld.itempool.append(progressive_item)
-                self.multiworld.itempool.append(progressive_item)
-
-        else:
-            for structure_unlock in structures:
-                self.multiworld.itempool.append(self.create_item(structure_unlock.item_name))
-
-            for synergy in synergies:
-                self.multiworld.itempool.append(self.create_item(synergy.item_name))
+        for structure_unlock in structures:
+            self.multiworld.itempool.append(self.create_item(structure_unlock.item_name))
 
         total_locations = len(self.multiworld.get_unfilled_locations(self.player))
         placed_items_count = len(upgrades) + len(structures)
